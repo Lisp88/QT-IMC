@@ -1,0 +1,41 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/register.png</file>
+        <file>tx/0.png</file>
+        <file>tx/1.png</file>
+        <file>tx/2.png</file>
+        <file>tx/3.png</file>
+        <file>tx/4.png</file>
+        <file>tx/5.png</file>
+        <file>tx/6.png</file>
+        <file>tx/7.png</file>
+        <file>tx/8.png</file>
+        <file>tx/9.png</file>
+        <file>tx/10.png</file>
+        <file>tx/11.png</file>
+        <file>tx/12.png</file>
+        <file>tx/13.png</file>
+        <file>tx/14.png</file>
+        <file>tx/15.png</file>
+        <file>tx/16.png</file>
+        <file>tx/17.png</file>
+        <file>tx/18.png</file>
+        <file>tx/19.png</file>
+        <file>tx/20.png</file>
+        <file>tx/21.png</file>
+        <file>tx/22.png</file>
+        <file>tx/23.png</file>
+        <file>tx/24.png</file>
+        <file>tx/25.png</file>
+        <file>tx/26.png</file>
+        <file>tx/27.png</file>
+        <file>tx/28.png</file>
+        <file>tx/29.png</file>
+        <file>tx/30.png</file>
+        <file>tx/31.png</file>
+        <file>tx/32.png</file>
+        <file>tx/33.png</file>
+        <file>tx/34.png</file>
+        <file>tx/35.png</file>
+    </qresource>
+</RCC>

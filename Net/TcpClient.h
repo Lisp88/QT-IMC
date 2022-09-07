@@ -1,12 +1,9 @@
 //
 // Created by Shota on 2022/8/24.
 //
-
+#include "INet.h"
 #ifndef IMC_TCPCLIENT_H
 #define IMC_TCPCLIENT_H
-
-#endif //IMC_TCPCLIENT_H
-#include "INet.h"
 class TcpClient : public INet
 {
 public:
@@ -30,3 +27,5 @@ protected:
     HANDLE m_hThreadHandle;
     SOCKET m_sock;
 };
+#endif //IMC_TCPCLIENT_H
+

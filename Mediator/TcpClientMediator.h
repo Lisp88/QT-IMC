@@ -1,13 +1,9 @@
 //
 // Created by Shota on 2022/8/24.
 //
-
+#include "INetMediator.h"
 #ifndef IMC_TCPCLIENTMEDIATOR_H
 #define IMC_TCPCLIENTMEDIATOR_H
-
-#endif //IMC_TCPCLIENTMEDIATOR_H
-#include "INetMediator.h"
-
 class TcpClientMediator :
         public INetMediator
 {
@@ -29,3 +25,6 @@ public:
 protected:
 
 };
+#endif //IMC_TCPCLIENTMEDIATOR_H
+
+

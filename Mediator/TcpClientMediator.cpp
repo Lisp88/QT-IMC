@@ -49,6 +49,4 @@ void TcpClientMediator::DealData(unsigned long lSendIP , char* buf , int nlen )
     std::cout<<"client show : ip " << _SERVER_IP <<"say :" << buf << std::endl;
     Q_EMIT signal_data_ready(buf , nlen );
 
-//	SendData(lSendIP , buf , nlen );
-//	delete[] buf;
 }
