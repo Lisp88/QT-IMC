@@ -37,5 +37,7 @@
         <file>tx/33.png</file>
         <file>tx/34.png</file>
         <file>tx/35.png</file>
+        <file>images/color.png</file>
+        <file>images/message.ico</file>
     </qresource>
 </RCC>

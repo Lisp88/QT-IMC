@@ -134,11 +134,12 @@ struct S_TCP_LOGIN_RS{
 };
 //获取好友信息
 struct S_FRIEND_INFO{
-    S_FRIEND_INFO():type(_DEF_TCP_FRIEND_INFO), userid(0), icon(0), state(0){}
+    S_FRIEND_INFO():type(_DEF_TCP_FRIEND_INFO), userid(0), icon(0), state(1){}
     int type;
     int userid;
     int icon;
     int state;
+    char feeling[_DEF_SIZE]{};
     char name[_DEF_SIZE]{};
 };
 //TODO

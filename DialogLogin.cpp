@@ -1,10 +1,10 @@
-#include "mychatdialog.h"
-#include "ui_mychatdialog.h"
+#include "DialogLogin.h"
+#include "ui_DialogLogin.h"
 #include <QMessageBox>
 #include "regex"
-MyChatDialog::MyChatDialog(QWidget *parent)
+DialogLogin::DialogLogin(QWidget *parent)
     : QDialog(parent)
-    , ui(new Ui::MyChatDialog)
+    , ui(new Ui::DialogLogin)
 {
     ui->setupUi(this);
 
@@ -12,12 +12,12 @@ MyChatDialog::MyChatDialog(QWidget *parent)
 
 }
 
-MyChatDialog::~MyChatDialog()
+DialogLogin::~DialogLogin()
 {
     delete ui;
 }
 
-void MyChatDialog::close_event(QCloseEvent *event)
+void DialogLogin::close_event(QCloseEvent *event)
 {
     //询问Box，父窗口指针，标题和提示语
     if(QMessageBox::question(this, "退出提示", "是否退出?") == QMessageBox::Yes){
@@ -27,7 +27,7 @@ void MyChatDialog::close_event(QCloseEvent *event)
 
 //按钮槽函数
 //登录
-void MyChatDialog::on_pb_login_clicked()
+void DialogLogin::on_pb_login_clicked()
 {
     QString tel = ui->le_login_tel->text();
     QString password = ui->le_login_password->text();
@@ -56,14 +56,14 @@ void MyChatDialog::on_pb_login_clicked()
 }
 
 //登录清空
-void MyChatDialog::on_pb_login_exit_clicked()
+void DialogLogin::on_pb_login_exit_clicked()
 {
     ui->le_login_tel->clear();
     ui->le_login_password->clear();
 }
 
 //注册
-void MyChatDialog::on_pb_register_clicked()
+void DialogLogin::on_pb_register_clicked()
 {
     QString name = ui->le_register_user->text();
     QString tel = ui->le_register_tel->text();
@@ -73,8 +73,8 @@ void MyChatDialog::on_pb_register_clicked()
     if(name.isEmpty()){
         QMessageBox::about(this, "提示", "用户名不允许为空！");
         return;
-    }else if(name.length() > 10){
-        QMessageBox::about(this, "提示", "用户名长度不能超过十个字符!");
+    }else if(name.length() > 16){
+        QMessageBox::about(this, "提示", "用户名长度不能超过十六个字符!");
         return;
     }
     //电话
@@ -108,7 +108,7 @@ void MyChatDialog::on_pb_register_clicked()
 }
 
 //注册清空
-void MyChatDialog::on_pb_register_exit_clicked()
+void DialogLogin::on_pb_register_exit_clicked()
 {
     ui->le_register_password->clear();
     ui->le_register_user->clear();

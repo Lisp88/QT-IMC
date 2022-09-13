@@ -16,6 +16,8 @@ INCLUDEPATH +=\
     ./Mediator
 
 SOURCES += \
+    DialogLogin.cpp \
+    DialogMain.cpp \
     Mediator/INetMediator.cpp \
     Mediator/TcpClientMediator.cpp \
     \#Mediator/TcpServerMediator.cpp \
@@ -24,11 +26,14 @@ SOURCES += \
     Net/TcpClient.cpp \
     \#Net/TcpServer.cpp \
     \#Net/UdpNet.cpp \
+    chatdialog.cpp \
     kernel.cpp \
     main.cpp \
-    mychatdialog.cpp
+    userchildwidget.cpp
 
 HEADERS += \
+    DialogLogin.h \
+    DialogMain.h \
     Mediator/INetMediator.h \
     Mediator/TcpClientMediator.h \
     \#Mediator/TcpServerMediator.h \
@@ -38,11 +43,15 @@ HEADERS += \
     Net/TcpClient.h \
     \#Net/TcpServer.h \
     \#Net/UdpNet.h \
+    chatdialog.h \
     kernel.h \
-    mychatdialog.h
+    userchildwidget.h
 
 FORMS += \
-    mychatdialog.ui
+    DialogLogin.ui \
+    DialogMain.ui \
+    chatdialog.ui \
+    userchildwidget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

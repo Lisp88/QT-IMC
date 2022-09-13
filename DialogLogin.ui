@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MyChatDialog</class>
- <widget class="QDialog" name="MyChatDialog">
+ <class>DialogLogin</class>
+ <widget class="QDialog" name="DialogLogin">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -18,7 +18,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>MyChatDialog</string>
+   <string>DialogLogin</string>
   </property>
   <widget class="QLabel" name="lb_icon">
    <property name="geometry">
