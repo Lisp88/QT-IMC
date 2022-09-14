@@ -10,6 +10,18 @@
     <height>530</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>739</width>
+    <height>530</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>739</width>
+    <height>530</height>
+   </size>
+  </property>
   <property name="font">
    <font>
     <family>微软雅黑</family>

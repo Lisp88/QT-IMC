@@ -1,8 +1,8 @@
 #include "chatdialog.h"
 #include "ui_chatdialog.h"
 #include<QTime>
-
-
+#include "QIcon"
+#include "QBitmap"
 ChatDialog::ChatDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ChatDialog)
@@ -16,7 +16,7 @@ ChatDialog::~ChatDialog()
 }
 
 //设置
-void ChatDialog::slot_setInfo(in id, QString name, int icon, int state)
+void ChatDialog::slot_setInfo(int id, QString name, int icon, int state)
 {
     //设置成员
     m_id = id;
@@ -25,13 +25,13 @@ void ChatDialog::slot_setInfo(in id, QString name, int icon, int state)
     m_icon = icon;
     QString path = QString(":/tx/%1.png").arg(m_icon);
 
-    //在线彩色
-    if(state)
+    //在线或机器人彩色
+    if(state || id == 2)
         ui->pb_icon->setIcon(QIcon(path));
     else{
-        QBitmap bmp;
-        bmp.load(path);
-        ui->pb_icon->setIcon(bmp);
+        QBitmap b;
+        b.load(path);
+        ui->pb_icon->setIcon(b);
     }
     //重绘
     this->repaint();
@@ -49,12 +49,10 @@ void ChatDialog::slot_setChatMsg(QString content)
     ui->tb_chat->append( content );
 }
 //用户离线
-void ChatDialog::user_offline()
+void ChatDialog::offline()
 {
     ui->tb_chat->append( QString("[%1] %2 用户离线").arg(m_name)
                          .arg(QTime::currentTime().toString("hh:mm:ss")) );
-
-    ui->tb_chat->append( content );
 }
 
 

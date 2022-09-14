@@ -5,6 +5,7 @@
 
 #include "QVBoxLayout"//添加布局层
 #include "Net/Packdef.h"
+#include "QMenu"
 namespace Ui {
 class DialogMain;
 }
@@ -22,10 +23,17 @@ public:
 
     //设置信息
     void set_info(S_FRIEND_INFO* self_info);
+signals:
+    void signal_add_friend();
+public slots:
+    void slot_deal_menu(QAction*);
+    void on_pb_menu_clicked();
 
 private:
     Ui::DialogMain *ui;
     QVBoxLayout* p_layout;
+    QMenu* m_menu;
+public:
     S_FRIEND_INFO* p_self_info;
 };
 

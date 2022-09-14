@@ -21,6 +21,10 @@ public:
     void deal_register_rs(char* buff, int len);
     //好友
     void deal_friend_rs(char* buff, int len);
+    //添加回复
+    void deal_add_rs(char* buff, int len);
+    //添加请求
+    void deal_friend_rq(char* buff, int len);
 
 signals:
 
@@ -30,6 +34,7 @@ public slots:
     void slot_register(QString name, QString tel, QString password);//注册槽函数
     void slot_login(QString tel, QString password);//登录槽函数
     void slot_chat(int id);//聊天槽函数
+    void slot_add_friend();//添加好友
 private:
     DialogLogin* p_login_windows;
     DialogMain* p_main_windows;

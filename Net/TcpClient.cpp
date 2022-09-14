@@ -65,7 +65,7 @@ bool TcpClient::InitNet() {
         UnInitNet();
         return false;
     }else{
-        std::cout<<"连接成功"<<std::endl;
+        std::cout<<"connect sussess"<<std::endl;
     }
 
     //4.接收和发送同时 , 使用线程完成  CreateThread
@@ -77,7 +77,7 @@ bool TcpClient::InitNet() {
 //静态成员函数
 unsigned int __stdcall TcpClient::RecvThread(void *lpvoid) {
     TcpClient *pthis = (TcpClient *) lpvoid;
-    std::cout<<"接收线程"<<std::endl;
+    std::cout<<"revc thread start"<<std::endl;
     pthis->RecvData();//出于方便的目的
 //	pthis->m_sock;  出于方便的目的
     return 0;

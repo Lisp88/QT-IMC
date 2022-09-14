@@ -31,7 +31,7 @@ void UserChildWidget::set_info(S_FRIEND_INFO* friend_info)
     QString path = QString(":/tx/%1.png").arg(self_info->icon);
 
     //在线彩色
-    if(self_info->state)
+    if(self_info->state || self_info->userid == 2)
         ui->pb_icon->setIcon(QIcon(path));
     else{
         QBitmap bmp;

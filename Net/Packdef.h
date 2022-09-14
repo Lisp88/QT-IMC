@@ -142,9 +142,26 @@ struct S_FRIEND_INFO{
     char feeling[_DEF_SIZE]{};
     char name[_DEF_SIZE]{};
 };
-//TODO
-//添加好友
 
+//添加好友
+struct S_ADD_FRIEND_RQ
+{
+    S_ADD_FRIEND_RQ():type(_DEF_TCP_ADD_RQ), user_id(0) {}
+    int type;
+    int user_id;
+    char name[_DEF_SIZE]{};
+    char friend_name[_DEF_SIZE]{};
+};
+struct S_ADD_FRIEND_RS
+{
+    S_ADD_FRIEND_RS():type(_DEF_TCP_ADD_RQ), user_id(0) {}
+    int type;
+    int user_id;
+    int friend_id;
+    char name[_DEF_SIZE]{};
+    char friend_name[_DEF_SIZE]{};
+    int result;
+};
 //聊天
 struct S_CHAT_RQ{
     S_CHAT_RQ():type(_DEF_TCP_CHAT_RQ), userid(0), friendid(0){}

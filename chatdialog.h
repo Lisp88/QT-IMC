@@ -16,9 +16,9 @@ public:
     explicit ChatDialog(QWidget *parent = 0);
     ~ChatDialog();
 
-    void slot_setInfo( int id);
+    void slot_setInfo( int id, QString name, int icon, int state);
     void slot_setChatMsg( QString content );
-    void user_offline();
+    void offline();
 private slots:
     void on_pb_send_clicked();
 

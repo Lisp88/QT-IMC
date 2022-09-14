@@ -3,6 +3,8 @@
 #include <QDebug>
 #include "Packdef.h"
 #include "userchildwidget.h"
+#include<QInputDialog>
+#include<QSize>
 
 #define NET_PACK_MAP(n)         net_pack_map[n-_DEF_PROTOCOL_BASE]
 
@@ -11,6 +13,8 @@ void Kernel::set_net_pack_map() {
     NET_PACK_MAP(_DEF_TCP_REGISTER_RS) = &Kernel::deal_register_rs;
     NET_PACK_MAP(_DEF_TCP_LOGIN_RS) = &Kernel::deal_login_rs;
     NET_PACK_MAP(_DEF_TCP_FRIEND_INFO) = &Kernel::deal_friend_rs;
+    NET_PACK_MAP(_DEF_TCP_ADD_RS) = &Kernel::deal_add_rs;
+    NET_PACK_MAP(_DEF_TCP_ADD_RQ) = &Kernel::deal_friend_rq;
 }
 
 Kernel::Kernel(QObject *parent) : QObject(parent), user_id(0)
@@ -20,10 +24,12 @@ Kernel::Kernel(QObject *parent) : QObject(parent), user_id(0)
     //窗体
     p_login_windows = new DialogLogin;
     p_main_windows = new DialogMain;
+    connect(p_main_windows, SIGNAL(signal_add_friend()), this, SLOT(slot_add_friend()));//绑定添加好友
+    connect(p_main_windows, SIGNAL(signal_close()), this, SLOT(slot_destory()));//关闭信号和销毁槽函数
     //信号槽绑定
-    connect(p_login_windows, SIGNAL(signal_close()), this, SLOT(slot_destory()));//关闭信号和销毁槽函数
     connect(p_login_windows, SIGNAL(signal_register(QString,QString,QString)), this, SLOT(slot_register(QString,QString,QString)));//注册
     connect(p_login_windows, SIGNAL(signal_login(QString,QString)), this, SLOT(slot_login(QString,QString)));//登录
+
     p_login_windows->show();
 
     //网络
@@ -101,7 +107,7 @@ void Kernel::deal_register_rs(char *buff, int len)
         break;
     }
 }
-//#include "QDebug"
+
 //处理回复的好友列表信息
 void Kernel::deal_friend_rs(char *buff, int len)
 {
@@ -127,9 +133,9 @@ void Kernel::deal_friend_rs(char *buff, int len)
         ChatDialog* chat = new ChatDialog;
         //connect
         //set chat dialog
-        chat->slot_setInfo(friend_rq->id, friend_rq->name, friend_rq->icon, friend_rq->state);
+        chat->slot_setInfo(friend_rq->userid, friend_rq->name, friend_rq->icon, friend_rq->state);
         //add map
-        chat_windows_map[friend_rq->id] = chat;
+        chat_windows_map[friend_rq->userid] = chat;
 
         item->set_info(friend_rq);
         p_main_windows->add_friend(item);
@@ -137,6 +143,52 @@ void Kernel::deal_friend_rs(char *buff, int len)
     }
 
 }
+
+//处理添加好友回复
+void Kernel::deal_add_rs(char *buff, int len)
+{
+    S_ADD_FRIEND_RS* add_friend_rs = (S_ADD_FRIEND_RS*)buff;
+    int result = add_friend_rs->result;
+
+    switch (result) {
+    case no_this_user:
+        QMessageBox::about(p_main_windows, "提示", "没有该用户");
+        break;
+    case user_offline:
+        QMessageBox::about(p_main_windows, "提示", "用户离线");
+        break;
+    case add_success:
+        QMessageBox::about(p_main_windows, "提示", "添加好友成功");
+        break;
+    case user_refuse:
+        QMessageBox::about(p_main_windows, "提示", "对方拒绝了你的请求");
+        break;
+    default:
+        break;
+    }
+}
+
+//处理添加好友请求
+void Kernel::deal_friend_rq(char *buff, int len)
+{
+    S_ADD_FRIEND_RQ* add_friend_rq = (S_ADD_FRIEND_RQ*)buff;
+    S_ADD_FRIEND_RS add_friend_rs;
+    strcpy_s(add_friend_rs.friend_name, sizeof(add_friend_rq->friend_name), add_friend_rq->friend_name);
+    add_friend_rs.friend_id = p_main_windows->p_self_info->userid;
+    add_friend_rs.user_id = add_friend_rq->user_id;
+    qDebug()<<"recv add friend request >> name"<<add_friend_rq->name;
+    qDebug()<<"recv add friend request >> friend_name"<<add_friend_rq->friend_name;
+    //同意或拒绝
+    if(QMessageBox::question(p_main_windows, "添加好友提示", QString("用户[%1]添加你为好友，是否同意?").arg(add_friend_rq->name)) == QMessageBox::Yes){
+        add_friend_rs.result = add_success;
+    }else{
+        add_friend_rs.result = user_refuse;
+    }
+
+    //回复
+    p_tcp_client_mediator->SendData(0, (char*)&add_friend_rs, sizeof(add_friend_rs));
+}
+
 //处理登录回复包
 void Kernel::deal_login_rs(char *buff, int len){
     qDebug()<<"deal login rs package";
@@ -162,6 +214,7 @@ void Kernel::deal_login_rs(char *buff, int len){
 //----------------处理接收数据---------------------
 
 
+
 //----------------ui界面槽函数---------------------
 //注册
 void Kernel::slot_register(QString name, QString tel, QString password)
@@ -178,6 +231,7 @@ void Kernel::slot_register(QString name, QString tel, QString password)
     //TODO 字符编码，加密优化（可做）
     p_tcp_client_mediator->SendData(0, (char*)&register_request, sizeof(register_request));
 }
+
 //登录
 void Kernel::slot_login(QString tel, QString password)
 {
@@ -191,6 +245,7 @@ void Kernel::slot_login(QString tel, QString password)
     //
     p_tcp_client_mediator->SendData(0, (char*)&login_request, sizeof(login_request));
 }
+
 //弹出聊天窗口
 void Kernel::slot_chat(int id)
 {
@@ -198,5 +253,43 @@ void Kernel::slot_chat(int id)
         ChatDialog* chat = chat_windows_map[id];
         chat->showNormal();//可最小化显示
     }
+}
+
+//弹出添加好友框
+void Kernel::slot_add_friend()
+{
+    qDebug()<<"slot add friend";
+    //弹出输入窗口
+    QInputDialog input(p_main_windows);
+    bool isok = true;
+    //QString name = input.getText(p_main_windows, "添加好友", "输入好友名称 :");
+    QString name = input.getText(p_main_windows, "添加好友", "输入好友名称 :", QLineEdit::Normal, "", &isok, Qt::MSWindowsFixedSizeDialogHint);
+    qDebug()<<"input :"<<name;
+    //--输入判断
+    if(name.isEmpty()) return;
+    if(name.length() > 16) {
+        QMessageBox::about(p_main_windows, "提示", "输入名字过长");
+    }
+    if(name == p_main_windows->p_self_info->name){
+        QMessageBox::about(p_main_windows, "提示", "不能添加自己为好友");
+    }
+    for(auto ite = friend_list_map.begin(); ite != friend_list_map.end(); ++ite){
+        UserChildWidget* item = ite->second;
+        if(item->self_info->name == name){
+            QMessageBox::about(p_main_windows, "提示", "该用户与你已经是好友");
+            return;
+        }
+    }
+    //--
+
+    //--发送添加好友包
+    S_ADD_FRIEND_RQ add_friend_rq;
+    strcpy_s(add_friend_rq.name, sizeof(p_main_windows->p_self_info->name), p_main_windows->p_self_info->name);
+    strcpy_s(add_friend_rq.friend_name, sizeof(name.toStdString().c_str()), name.toStdString().c_str());
+    add_friend_rq.user_id = p_main_windows->p_self_info->userid;
+    qDebug()<<"send friend package >> user name :"<<p_main_windows->p_self_info->name;
+    qDebug()<<"send friend package >> friend name :"<<name;
+    p_tcp_client_mediator->SendData(0, (char*)&add_friend_rq, sizeof(add_friend_rq));
+    qDebug()<<"send add friend rq";
 }
 //----------------ui界面槽函数---------------------
