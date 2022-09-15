@@ -19,6 +19,7 @@ public:
     void slot_setInfo( int id, QString name, int icon, int state);
     void slot_setChatMsg( QString content );
     void offline();
+    void offline_repaint();
 private slots:
     void on_pb_send_clicked();
 

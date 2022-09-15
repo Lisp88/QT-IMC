@@ -18,8 +18,12 @@ signals:
 public:
     DialogLogin(QWidget *parent = nullptr);
     ~DialogLogin();
-    //关闭页面
-    void close_event(QCloseEvent* event);
+
+    //事件---
+    //关闭页面的事件
+    void closeEvent(QCloseEvent *event);
+
+
 private slots:
     void on_pb_login_clicked();
 

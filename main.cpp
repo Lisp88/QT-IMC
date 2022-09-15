@@ -1,5 +1,4 @@
 #include "DialogLogin.h"
-
 #include <QApplication>
 #include "kernel.h"
 #include "DialogMain.h"

@@ -25,7 +25,12 @@ public:
     void deal_add_rs(char* buff, int len);
     //添加请求
     void deal_friend_rq(char* buff, int len);
-
+    //聊天请求
+    void deal_chat_rq(char* buff, int len);
+    //聊天回复（不在线）
+    void deal_chat_rs(char* buff, int len);
+    //处理离线请求
+    void deal_offline_rq(char* buff, int len);
 signals:
 
 public slots:
@@ -35,6 +40,8 @@ public slots:
     void slot_login(QString tel, QString password);//登录槽函数
     void slot_chat(int id);//聊天槽函数
     void slot_add_friend();//添加好友
+    void slot_send_chat_info(int id, QString content);//发送聊天信息
+    void slot_offline();//离线
 private:
     DialogLogin* p_login_windows;
     DialogMain* p_main_windows;

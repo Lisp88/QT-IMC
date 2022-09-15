@@ -2,6 +2,7 @@
 #include "ui_DialogLogin.h"
 #include <QMessageBox>
 #include "regex"
+#include "QDebug"
 DialogLogin::DialogLogin(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::DialogLogin)
@@ -17,11 +18,17 @@ DialogLogin::~DialogLogin()
     delete ui;
 }
 
-void DialogLogin::close_event(QCloseEvent *event)
+void DialogLogin::closeEvent(QCloseEvent *event)
 {
+    //event->accept();;
     //询问Box，父窗口指针，标题和提示语
-    if(QMessageBox::question(this, "退出提示", "是否退出?") == QMessageBox::Yes){
+    event->ignore();
+    if(QMessageBox::question(this, "退出提示", "是否退出?") == QMessageBox::Yes)
+    {
+        qDebug()<<"client login close";
         Q_EMIT signal_close();
+    }else{
+        return;
     }
 }
 

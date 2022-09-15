@@ -15,6 +15,9 @@ void Kernel::set_net_pack_map() {
     NET_PACK_MAP(_DEF_TCP_FRIEND_INFO) = &Kernel::deal_friend_rs;
     NET_PACK_MAP(_DEF_TCP_ADD_RS) = &Kernel::deal_add_rs;
     NET_PACK_MAP(_DEF_TCP_ADD_RQ) = &Kernel::deal_friend_rq;
+    NET_PACK_MAP(_DEF_TCP_CHAT_RQ) = &Kernel::deal_chat_rq;
+    NET_PACK_MAP(_DEF_TCP_CHAT_RS) = &Kernel::deal_chat_rs;
+    NET_PACK_MAP(_DEF_TCP_OFFLINE_INFO) = &Kernel::deal_offline_rq;
 }
 
 Kernel::Kernel(QObject *parent) : QObject(parent), user_id(0)
@@ -25,11 +28,12 @@ Kernel::Kernel(QObject *parent) : QObject(parent), user_id(0)
     p_login_windows = new DialogLogin;
     p_main_windows = new DialogMain;
     connect(p_main_windows, SIGNAL(signal_add_friend()), this, SLOT(slot_add_friend()));//绑定添加好友
-    connect(p_main_windows, SIGNAL(signal_close()), this, SLOT(slot_destory()));//关闭信号和销毁槽函数
+    connect(p_main_windows, SIGNAL(signal_close()), this, SLOT(slot_offline()));
+
     //信号槽绑定
     connect(p_login_windows, SIGNAL(signal_register(QString,QString,QString)), this, SLOT(slot_register(QString,QString,QString)));//注册
     connect(p_login_windows, SIGNAL(signal_login(QString,QString)), this, SLOT(slot_login(QString,QString)));//登录
-
+    connect(p_login_windows, SIGNAL(signal_close()), this, SLOT(slot_destory()));//关闭信号和销毁槽函数
     p_login_windows->show();
 
     //网络
@@ -39,12 +43,6 @@ Kernel::Kernel(QObject *parent) : QObject(parent), user_id(0)
         QMessageBox::about(p_login_windows, "提示", "网络异常");
         slot_destory();
     }
-
-//    //测试好友
-//    for (int var = 0; var < 10; ++var) {
-//        UserChildWidget* friend_item = new UserChildWidget;
-//        p_main_windows->add_friend(friend_item);
-//    }
 
 }
 
@@ -73,7 +71,7 @@ void Kernel::slot_destory()
     exit(0);
 }
 
-//----------------处理接收数据---------------------
+//----------------处理接收数据---------------------------------------------------------------
 //分析协议，分发包
 void Kernel::slot_deal_data(char *buff, int len)
 {
@@ -126,12 +124,17 @@ void Kernel::deal_friend_rs(char *buff, int len)
         }
         //更新信息
         item->set_info(friend_rq);
+        if(chat_windows_map.count(friend_rq->userid)){
+            ChatDialog* chat = chat_windows_map[friend_rq->userid];
+            chat->slot_setInfo(friend_rq->userid, QString::fromStdString(friend_rq->name),friend_rq->icon, friend_rq->state);
+        }
     }else{//没人添加控件，并添加到map
         UserChildWidget* item = new UserChildWidget;
         connect(item, SIGNAL(icon_clicked(int)), this, SLOT(slot_chat(int)));
         //创建聊天窗口
         ChatDialog* chat = new ChatDialog;
         //connect
+        connect(chat, SIGNAL(SIG_SendChatMsg(int,QString)), this, SLOT(slot_send_chat_info(int,QString)));
         //set chat dialog
         chat->slot_setInfo(friend_rq->userid, friend_rq->name, friend_rq->icon, friend_rq->state);
         //add map
@@ -172,12 +175,14 @@ void Kernel::deal_add_rs(char *buff, int len)
 void Kernel::deal_friend_rq(char *buff, int len)
 {
     S_ADD_FRIEND_RQ* add_friend_rq = (S_ADD_FRIEND_RQ*)buff;
-    S_ADD_FRIEND_RS add_friend_rs;
-    strcpy_s(add_friend_rs.friend_name, sizeof(add_friend_rq->friend_name), add_friend_rq->friend_name);
-    add_friend_rs.friend_id = p_main_windows->p_self_info->userid;
-    add_friend_rs.user_id = add_friend_rq->user_id;
     qDebug()<<"recv add friend request >> name"<<add_friend_rq->name;
     qDebug()<<"recv add friend request >> friend_name"<<add_friend_rq->friend_name;
+    S_ADD_FRIEND_RS add_friend_rs;
+    strcpy_s(add_friend_rs.friend_name, add_friend_rq->friend_name);
+    add_friend_rs.friend_id = user_id;
+    //add_friend_rs.friend_id = 5;
+    add_friend_rs.user_id = add_friend_rq->user_id;
+
     //同意或拒绝
     if(QMessageBox::question(p_main_windows, "添加好友提示", QString("用户[%1]添加你为好友，是否同意?").arg(add_friend_rq->name)) == QMessageBox::Yes){
         add_friend_rs.result = add_success;
@@ -189,6 +194,49 @@ void Kernel::deal_friend_rq(char *buff, int len)
     p_tcp_client_mediator->SendData(0, (char*)&add_friend_rs, sizeof(add_friend_rs));
 }
 
+//接收聊天处理
+void Kernel::deal_chat_rq(char *buff, int len)
+{
+    //拆包
+    S_CHAT_RQ* chat_rq = (S_CHAT_RQ*)buff;
+    //找到对应聊天窗口，user_id为对方
+    if(chat_windows_map.count(chat_rq->userid)){
+        ChatDialog* chat = chat_windows_map[chat_rq->userid];
+        //显示内容
+        chat->slot_setChatMsg(QString::fromStdString(chat_rq->content));
+        chat->showNormal();
+    }
+}
+
+//回复/不在线
+void Kernel::deal_chat_rs(char *buff, int len)
+{
+    S_CHAT_RS* chat_rs = (S_CHAT_RS*)buff;
+
+    //将不在线信息贴在窗口上，friend_id为对方
+    if(chat_windows_map.count(chat_rs->friendid)){
+        ChatDialog* chat = chat_windows_map[chat_rs->friendid];
+        chat->offline();
+        chat->showNormal();
+    }
+}
+
+//处理离线请求
+void Kernel::deal_offline_rq(char *buff, int len)
+{
+    //拆包
+    S_TCP_OFFLINE* offline_rq = (S_TCP_OFFLINE*)buff;
+    //找到该用户，设置离线
+    if(friend_list_map.count(offline_rq->userid)){
+        UserChildWidget* item = friend_list_map[offline_rq->userid];
+        item->set_offline();
+    }
+    if(chat_windows_map.count(offline_rq->userid)){
+        ChatDialog* chat = chat_windows_map[offline_rq->userid];
+        chat->offline_repaint();
+    }
+}
+
 //处理登录回复包
 void Kernel::deal_login_rs(char *buff, int len){
     qDebug()<<"deal login rs package";
@@ -198,6 +246,7 @@ void Kernel::deal_login_rs(char *buff, int len){
     case login_success:
         //QMessageBox::about(p_main_windows, "登陆提示", "登陆成功");
         user_id = login_rs->userid;
+        p_main_windows->p_self_info->userid = user_id;
         //界面切换，使用模态对话框，点完之后切换页面
         p_main_windows->show();
         p_login_windows->hide();
@@ -211,11 +260,11 @@ void Kernel::deal_login_rs(char *buff, int len){
         break;
     }
 }
-//----------------处理接收数据---------------------
+//----------------处理接收数据----------------------------------------------------------
 
 
 
-//----------------ui界面槽函数---------------------
+//----------------ui界面槽函数----------------------------------------------------------
 //注册
 void Kernel::slot_register(QString name, QString tel, QString password)
 {
@@ -280,16 +329,39 @@ void Kernel::slot_add_friend()
             return;
         }
     }
-    //--
 
     //--发送添加好友包
     S_ADD_FRIEND_RQ add_friend_rq;
-    strcpy_s(add_friend_rq.name, sizeof(p_main_windows->p_self_info->name), p_main_windows->p_self_info->name);
-    strcpy_s(add_friend_rq.friend_name, sizeof(name.toStdString().c_str()), name.toStdString().c_str());
     add_friend_rq.user_id = p_main_windows->p_self_info->userid;
-    qDebug()<<"send friend package >> user name :"<<p_main_windows->p_self_info->name;
-    qDebug()<<"send friend package >> friend name :"<<name;
+    strcpy_s(add_friend_rq.name, sizeof(p_main_windows->p_self_info->name), p_main_windows->p_self_info->name);
+    strcpy_s(add_friend_rq.friend_name, name.toStdString().c_str());
+    qDebug()<<"send friend package >> user name :"<<add_friend_rq.name;
+    qDebug()<<"send friend package >> friend name :"<<add_friend_rq.friend_name;
     p_tcp_client_mediator->SendData(0, (char*)&add_friend_rq, sizeof(add_friend_rq));
     qDebug()<<"send add friend rq";
 }
-//----------------ui界面槽函数---------------------
+
+//发送聊天信息
+void Kernel::slot_send_chat_info(int id, QString content)
+{
+    S_CHAT_RQ chat_rq;
+    chat_rq.userid = user_id;
+    chat_rq.friendid = id;
+
+    std::string std_content = content.toStdString();
+    strcpy_s(chat_rq.content, std_content.c_str());
+
+    p_tcp_client_mediator->SendData(0, (char*)&chat_rq, sizeof(chat_rq));
+}
+
+//发送离线请求
+void Kernel::slot_offline()
+{
+    S_TCP_OFFLINE offline_rq;
+    offline_rq.userid = user_id;
+
+    p_tcp_client_mediator->SendData(0, (char*)&offline_rq, sizeof(offline_rq));
+
+    slot_destory();
+}
+//----------------ui界面槽函数----------------------------------------------------------

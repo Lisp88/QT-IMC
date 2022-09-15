@@ -55,6 +55,15 @@ void ChatDialog::offline()
                          .arg(QTime::currentTime().toString("hh:mm:ss")) );
 }
 
+void ChatDialog::offline_repaint()
+{
+    QString path = QString(":/tx/%1.png").arg(m_icon);
+    QBitmap b;
+    b.load(path);
+    ui->pb_icon->setIcon(b);
+    this->repaint();
+}
+
 
 //发送按钮
 void ChatDialog::on_pb_send_clicked()

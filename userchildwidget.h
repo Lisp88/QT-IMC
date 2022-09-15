@@ -17,10 +17,16 @@ signals:
 public:
     explicit UserChildWidget(QWidget *parent = nullptr);
     ~UserChildWidget();
-
+    //设置信息
     void set_info(S_FRIEND_INFO* friend_info);
+    //设置离线
+    void set_offline();
+    //添加事件
+    void mouseDoubleClickEvent();
 private slots:
-    void on_pb_icon_clicked();
+    void on_pb_icon_clicked();//鼠标点击头像槽函数
+
+
 
 private:
     Ui::UserChildWidget *ui;

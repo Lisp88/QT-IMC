@@ -154,7 +154,7 @@ struct S_ADD_FRIEND_RQ
 };
 struct S_ADD_FRIEND_RS
 {
-    S_ADD_FRIEND_RS():type(_DEF_TCP_ADD_RQ), user_id(0) {}
+    S_ADD_FRIEND_RS():type(_DEF_TCP_ADD_RS), user_id(0), friend_id(0) {}
     int type;
     int user_id;
     int friend_id;
@@ -175,6 +175,8 @@ struct S_CHAT_RS{
     S_CHAT_RS():type(_DEF_TCP_CHAT_RS), result(0){}
     int type;
     int result;
+    int userid;
+    int friendid;
 };
 
 //离线

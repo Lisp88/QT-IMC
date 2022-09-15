@@ -6,6 +6,7 @@
 #include "QVBoxLayout"//添加布局层
 #include "Net/Packdef.h"
 #include "QMenu"
+#include "QCloseEvent"
 namespace Ui {
 class DialogMain;
 }
@@ -23,8 +24,13 @@ public:
 
     //设置信息
     void set_info(S_FRIEND_INFO* self_info);
+
+    //事件---
+    void closeEvent(QCloseEvent *event);
 signals:
     void signal_add_friend();
+    void signal_close();
+
 public slots:
     void slot_deal_menu(QAction*);
     void on_pb_menu_clicked();

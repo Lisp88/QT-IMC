@@ -41,6 +41,20 @@ void UserChildWidget::set_info(S_FRIEND_INFO* friend_info)
     //重绘
     this->repaint();
 }
+
+void UserChildWidget::set_offline()
+{
+    QString path = QString(":/tx/%1.png").arg(self_info->icon);
+    QBitmap bmp;
+    bmp.load(path);
+    ui->pb_icon->setIcon(bmp);
+    this->repaint();
+}
+
+void UserChildWidget::mouseDoubleClickEvent()
+{
+    Q_EMIT icon_clicked(self_info->userid);
+}
 //头像槽
 void UserChildWidget::on_pb_icon_clicked()
 {

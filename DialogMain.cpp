@@ -1,6 +1,7 @@
 #include "DialogMain.h"
 #include "ui_DialogMain.h"
 #include "QDebug"
+#include "QMessageBox"
 DialogMain::DialogMain(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DialogMain)
@@ -37,18 +38,30 @@ void DialogMain::add_friend(QWidget *user)
 //更新信息
 void DialogMain::set_info(S_FRIEND_INFO *self_info)
 {
-    //更新UI
-    QString path = QString(":/tx/%1.png").arg(self_info->icon);
-    ui->pb_icon->setIcon(QIcon(path));
-
-    ui->lb_name->setText(self_info->name);
-    ui->le_feeling->setText(self_info->feeling);
     //更新自身
     p_self_info->userid = self_info->userid;
     p_self_info->icon = self_info->icon;
     strcpy_s(p_self_info->name, sizeof(self_info->name), self_info->name);
     strcpy_s(p_self_info->feeling, sizeof(self_info->feeling), self_info->feeling);
     p_self_info->state = self_info->state;
+
+    //更新UI
+    QString path = QString(":/tx/%1.png").arg(self_info->icon);
+    ui->pb_icon->setIcon(QIcon(path));
+
+    ui->lb_name->setText(self_info->name);
+    ui->le_feeling->setText(self_info->feeling);
+}
+
+void DialogMain::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    if(QMessageBox::question(this, "退出提示","是否退出imc?") == QMessageBox::Yes){
+        qDebug()<<"client imc exit";
+        Q_EMIT signal_close();
+    }else{
+        return;
+    }
 }
 
 void DialogMain::slot_deal_menu(QAction *action)
