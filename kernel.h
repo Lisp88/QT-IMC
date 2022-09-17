@@ -31,6 +31,12 @@ public:
     void deal_chat_rs(char* buff, int len);
     //处理离线请求
     void deal_offline_rq(char* buff, int len);
+    //处理文件接收
+    void deal_file_rq(char* buff, int len);
+    //处理文件回复
+    void deal_file_rs(char* buff, int len);
+    //处理文件块儿请求
+    void deal_file_block_rq(char* buff, int len);
 signals:
 
 public slots:
@@ -42,6 +48,7 @@ public slots:
     void slot_add_friend();//添加好友
     void slot_send_chat_info(int id, QString content);//发送聊天信息
     void slot_offline();//离线
+    void slot_send_file(int id, QString path);//发送文件
 private:
     DialogLogin* p_login_windows;
     DialogMain* p_main_windows;
@@ -50,6 +57,7 @@ private:
     std::map<int, P_FUN> net_pack_map;//协议包映射处理函数
     std::map<int, UserChildWidget*> friend_list_map;//好友id映射ui控件
     std::map<int, ChatDialog*> chat_windows_map;//好友id映射聊天窗口
+    std::map<std::string, S_FILE_INFO*> file_info_map;//文件id映射文件信息
     int user_id;
 
     void set_net_pack_map();//工具函数，为map进行赋值

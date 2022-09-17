@@ -86,3 +86,14 @@ void ChatDialog::on_pb_send_clicked()
 
     Q_EMIT SIG_SendChatMsg( m_id , strContent );
 }
+
+#include "QFileDialog"
+//发送文件按钮
+void ChatDialog::on_pb_tool1_clicked()
+{
+    //打开文件，获取路径
+    QString path = QFileDialog::getOpenFileName(this, "打开文件", "./", "所有文件(*.*)");//类，
+    //发送信号（Kernel:id，文件路径）
+    Q_EMIT signal_file(m_id, path);
+}
+

@@ -5,7 +5,7 @@
 #include "userchildwidget.h"
 #include<QInputDialog>
 #include<QSize>
-
+#include "QFileDialog"
 #define NET_PACK_MAP(n)         net_pack_map[n-_DEF_PROTOCOL_BASE]
 
 void Kernel::set_net_pack_map() {
@@ -18,6 +18,9 @@ void Kernel::set_net_pack_map() {
     NET_PACK_MAP(_DEF_TCP_CHAT_RQ) = &Kernel::deal_chat_rq;
     NET_PACK_MAP(_DEF_TCP_CHAT_RS) = &Kernel::deal_chat_rs;
     NET_PACK_MAP(_DEF_TCP_OFFLINE_INFO) = &Kernel::deal_offline_rq;
+    NET_PACK_MAP(_DEF_TCP_FILE_RQ) = &Kernel::deal_file_rq;
+    NET_PACK_MAP(_DEF_TCP_FILE_RS) = &Kernel::deal_file_rs;
+    NET_PACK_MAP(_DEF_TCP_FILE_BLOCK_RQ) = &Kernel::deal_file_block_rq;//不写回复了
 }
 
 Kernel::Kernel(QObject *parent) : QObject(parent), user_id(0)
@@ -35,6 +38,7 @@ Kernel::Kernel(QObject *parent) : QObject(parent), user_id(0)
     connect(p_login_windows, SIGNAL(signal_login(QString,QString)), this, SLOT(slot_login(QString,QString)));//登录
     connect(p_login_windows, SIGNAL(signal_close()), this, SLOT(slot_destory()));//关闭信号和销毁槽函数
     p_login_windows->show();
+
 
     //网络
     p_tcp_client_mediator = new TcpClientMediator;
@@ -133,8 +137,10 @@ void Kernel::deal_friend_rs(char *buff, int len)
         connect(item, SIGNAL(icon_clicked(int)), this, SLOT(slot_chat(int)));
         //创建聊天窗口
         ChatDialog* chat = new ChatDialog;
-        //connect
+        //connect 发送聊天信息
         connect(chat, SIGNAL(SIG_SendChatMsg(int,QString)), this, SLOT(slot_send_chat_info(int,QString)));
+        //发送文件
+        connect(chat, SIGNAL(signal_file(int,QString)), this, SLOT(slot_send_file(int,QString)));
         //set chat dialog
         chat->slot_setInfo(friend_rq->userid, friend_rq->name, friend_rq->icon, friend_rq->state);
         //add map
@@ -235,6 +241,128 @@ void Kernel::deal_offline_rq(char *buff, int len)
         ChatDialog* chat = chat_windows_map[offline_rq->userid];
         chat->offline_repaint();
     }
+}
+
+void Kernel::deal_file_rq(char *buff, int len)
+{
+    //拆包
+    S_FILE_INFO_RQ* file_info_rq = (S_FILE_INFO_RQ*)buff;
+    S_FILE_INFO_RS file_info_rs;
+    //写回复
+    strcpy(file_info_rs.file_id, file_info_rq->file_id);
+    file_info_rs.friend_id = file_info_rq->friend_id;
+    file_info_rs.user_id = file_info_rq->user_id;
+
+    if(friend_list_map.count(file_info_rq->user_id)){
+        UserChildWidget* item = friend_list_map[file_info_rq->user_id];
+        std::string user_name(item->self_info->name);
+        //询问
+        QString str_question = QString("用户[%1]发送文件[%2]\n大小:[%3]bytes\n是否接收? ")
+                .arg(QString::fromStdString(user_name)).arg(QString::fromStdString(std::string(file_info_rq->file_name)))
+                .arg(file_info_rq->file_size);
+        if(QMessageBox::question(p_main_windows, "文件传输请求", str_question) == QMessageBox::Yes){
+            //同意 保存路径，缓存文件信息
+            QString save_path = QFileDialog::getSaveFileName(nullptr, "保存文件",
+                                                             QString::fromStdString(std::string(file_info_rq->file_name)), "所有文件(*.*)");
+            if(save_path.isEmpty()){
+                //拒绝
+                file_info_rs.result = file_refuse;
+            }else{
+                file_info_rs.result = file_accept;
+//              /回复赋值
+                S_FILE_INFO* p_info = new S_FILE_INFO;
+                strcpy(p_info->file_id, file_info_rq->file_id);
+                strcpy(p_info->file_name, file_info_rq->file_name);
+                p_info->file_size = file_info_rq->file_size;
+                p_info->friend_id = file_info_rq->friend_id;
+                p_info->user_id = file_info_rq->user_id;
+                strcpy(p_info->file_path, save_path.toStdString().c_str());
+                //打开文件，开始读写
+                fopen_s(&(p_info->p_file), p_info->file_path, "wb");
+                p_info->pos = 0;
+                //添加缓存map
+                file_info_map[std::string(p_info->file_id)] = p_info;
+            }
+
+        }else{
+            //拒绝
+            file_info_rs.result = file_refuse;
+        }
+    }
+
+    //返回结果
+    p_tcp_client_mediator->SendData(0, (char*)&file_info_rs, sizeof(file_info_rs));
+}
+
+void Kernel::deal_file_rs(char *buff, int len)
+{
+    qDebug()<<"file rs";
+    //拆包
+    S_FILE_INFO_RS* file_info_rs = (S_FILE_INFO_RS*)buff;
+    //拒绝
+    if(file_info_rs->result == file_refuse){
+        QMessageBox::about(p_main_windows, "提示", "用户拒绝接收文件");
+    }
+    //同意
+    if(file_info_rs->result == file_accept){
+        std::string file_id(file_info_rs->file_id);
+        if(file_info_map.count(file_id)){
+            qDebug()<<"find map fail";
+            return ;
+        }
+        S_FILE_INFO* p_info = file_info_map[file_info_rs->file_id];
+        fopen_s(&(p_info->p_file), p_info->file_path, "rb");
+        if(!(p_info->p_file)){
+            qDebug()<<"find info fail";
+        }
+        while(1){
+            S_FILE_BLOCK_RQ block_rq;
+            strcpy(block_rq.file_id, file_info_rs->file_id);
+            block_rq.user_id = file_info_rs->user_id;
+            block_rq.friend_id = file_info_rs->friend_id;
+            int res = fread(block_rq.file_content, 1, _DEF_CONTENT, p_info->p_file);
+            //发文件快
+            p_tcp_client_mediator->SendData(0, (char*)&block_rq, sizeof(block_rq));
+
+
+            block_rq.block_size = res;
+            p_info->pos += res;
+            if(p_info->pos >= p_info->file_size){
+                fclose(p_info->p_file);
+                file_info_map.erase(file_id);
+                delete p_info;
+                break;
+            }
+
+        }
+    }
+
+
+}
+
+void Kernel::deal_file_block_rq(char *buff, int len)
+{
+    //拆包
+    S_FILE_BLOCK_RQ* block_rq = (S_FILE_BLOCK_RQ*)buff;
+    //根据id从map找到info
+    std::string file_id(block_rq->file_id);
+    if(file_info_map.count(file_id)){
+        S_FILE_INFO* p_info = file_info_map[file_id];
+
+        //写数据
+        int res = fwrite(block_rq->file_content, 1, block_rq->block_size, p_info->p_file);
+
+        p_info->pos += res;
+        //回收
+        if(p_info->pos >= p_info->file_size){
+            fclose(p_info->p_file);
+            file_info_map.erase(file_id);
+            delete p_info;
+        }
+    }else{
+        return;
+    }
+
 }
 
 //处理登录回复包
@@ -363,5 +491,37 @@ void Kernel::slot_offline()
     p_tcp_client_mediator->SendData(0, (char*)&offline_rq, sizeof(offline_rq));
 
     slot_destory();
+}
+#include "QFileInfo"
+#include "QTime"
+//发送文件
+void Kernel::slot_send_file(int id, QString path)
+{
+    //打包发送
+    QFileInfo info(path);
+    std::string file_name = info.fileName().toStdString();
+
+    S_FILE_INFO_RQ file_send_rq;
+    strcpy(file_send_rq.file_name, file_name.c_str());
+    file_send_rq.file_size = info.size();
+    QString time = QTime::currentTime().toString("hhmmsszzz");
+    strcpy(file_send_rq.file_id,  time.toStdString().c_str());//可以使用MD5获得文件指纹，这里使用时间戳（并发量小，默认同一ms内只有一个文件被发送）
+    file_send_rq.user_id = user_id;
+    file_send_rq.friend_id = id;
+
+    //rs
+    S_FILE_INFO* p_info = new S_FILE_INFO;
+    strcpy(p_info->file_id, file_send_rq.file_id);
+    strcpy(p_info->file_name, file_send_rq.file_name);
+    p_info->file_size = file_send_rq.file_size;
+    strcpy(p_info->file_id, file_send_rq.file_id);
+    p_info->p_file = nullptr;
+    p_info->pos = 0;
+    p_info->user_id = file_send_rq.user_id;
+    strcpy(p_info->file_path, path.toStdString().c_str());
+    //存储map
+    file_info_map[std::string(file_send_rq.file_id)] = p_info;
+
+    p_tcp_client_mediator->SendData(0, (char*)&file_send_rq, sizeof(file_send_rq));
 }
 //----------------ui界面槽函数----------------------------------------------------------

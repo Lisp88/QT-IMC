@@ -12,6 +12,7 @@ class ChatDialog : public QDialog
     Q_OBJECT
 signals:
     void SIG_SendChatMsg( int id , QString content);
+    void signal_file(int id, QString file_path);
 public:
     explicit ChatDialog(QWidget *parent = 0);
     ~ChatDialog();
@@ -22,6 +23,8 @@ public:
     void offline_repaint();
 private slots:
     void on_pb_send_clicked();
+
+    void on_pb_tool1_clicked();
 
 private:
     Ui::ChatDialog *ui;

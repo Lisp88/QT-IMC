@@ -25,7 +25,7 @@
 //传文件
 #define _DEF_PROTOCOL_FILEINFO_RQ		(_DEF_PROTOCOL_BASE+6)
 #define _DEF_PROTOCOL_FILEINFO_RS		(_DEF_PROTOCOL_BASE+7)
-//广域网 TCP
+//-------------------------------广域网 TCP
 //注册 TCP
 #define _DEF_TCP_REGISTER_RQ      (_DEF_PROTOCOL_BASE+11)
 #define _DEF_TCP_REGISTER_RS      (_DEF_PROTOCOL_BASE+12)
@@ -57,12 +57,33 @@
 //传文件
 #define _DEF_TCP_FILE_RQ        _DEF_PROTOCOL_BASE+20
 #define _DEF_TCP_FILE_RS        _DEF_PROTOCOL_BASE+21
+//文件块
+#define _DEF_TCP_FILE_BLOCK_RQ  _DEF_PROTOCOL_BASE+22
+#define _DEF_TCP_FILE_BLOCK_RS  _DEF_PROTOCOL_BASE+23
+
+//文件名长度
+#define _DEF_FILE_NAME_MAX       260
+#define _DEF_FILE_CONTENT_SIZE      4096
+
 //文件结果
-//#define user_refuse         1 用上面的
-//#define user_offline        2
+#define file_refuse         1
+//#define user_offline      2 用上面的
 #define file_accept         3
 //离线
 #define _DEF_TCP_OFFLINE_INFO       _DEF_PROTOCOL_BASE+22
+//文件块接收结果
+#define file_block_recv_sucess      1
+#define file_block_recv_fail        2
+
+
+
+
+
+
+
+
+
+
 
 //UDP
 //协议结构 
@@ -186,4 +207,59 @@ struct S_TCP_OFFLINE{
     int userid;
 };
 
-//数据库
+//文件信息请求
+struct S_FILE_INFO_RQ{
+    S_FILE_INFO_RQ():type(_DEF_TCP_FILE_RQ), user_id(0), friend_id(0), file_size(0){}
+    int type;
+    int user_id;
+    int friend_id;
+    long long file_size;//16G大小
+    char file_id[_DEF_SIZE]{};
+    char file_name[_DEF_FILE_NAME_MAX]{};
+};
+
+//文件信息回复
+struct S_FILE_INFO_RS{
+    S_FILE_INFO_RS():type(_DEF_TCP_FILE_RS), user_id(0), friend_id(0), result(0){}
+    int type;
+    int user_id;
+    int friend_id;
+    int result;
+    char file_id[_DEF_SIZE]{};
+};
+
+//文件信息结构体 file_id映射 file_info
+struct S_FILE_INFO{
+    S_FILE_INFO():user_id(0), friend_id(0), file_size(0), pos(0), p_file(nullptr){}
+    int user_id;
+    int friend_id;
+    long long pos;//当前文件流位置
+    long long file_size;//16G大小
+    FILE* p_file;
+
+    char file_id[_DEF_SIZE]{};
+    char file_name[_DEF_FILE_NAME_MAX]{};
+    char file_path[_DEF_FILE_NAME_MAX]{};
+};
+//文件块儿请求
+struct S_FILE_BLOCK_RQ{
+    S_FILE_BLOCK_RQ():type(_DEF_TCP_FILE_BLOCK_RQ), user_id(0), friend_id(0), block_size(0){}
+    int type;
+    int user_id;
+    int friend_id;
+    int block_size;
+    char file_id[_DEF_SIZE]{};
+    char file_nmae[_DEF_FILE_NAME_MAX]{};
+    char file_content[_DEF_CONTENT]{};
+};
+
+//文件块儿回复
+struct S_FILE_BLOCK_RS{
+    S_FILE_BLOCK_RS():type(_DEF_TCP_FILE_BLOCK_RS), user_id(0), friend_id(0), result(0){}
+    int type;
+    int user_id;
+    int friend_id;
+    int result;
+    char file_id[_DEF_SIZE]{};
+};
+
