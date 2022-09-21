@@ -83,7 +83,7 @@ void Kernel::slot_deal_data(char *buff, int len)
     int type = *(int* )buff;
     qDebug()<<"deal data : "<<type;
     P_FUN p_fun = NET_PACK_MAP(type);
-
+    qDebug()<<"type :"<<type;
     if(p_fun)
         (this->*p_fun)(buff, len);
 }
@@ -276,7 +276,8 @@ void Kernel::deal_file_rq(char *buff, int len)
                 p_info->file_size = file_info_rq->file_size;
                 p_info->friend_id = file_info_rq->friend_id;
                 p_info->user_id = file_info_rq->user_id;
-                strcpy(p_info->file_path, save_path.toStdString().c_str());
+                //f_open打开文件接受 gb2312字符集
+                UTF8TOGB2312(p_info->file_path, sizeof(p_info->file_path), save_path);
                 //打开文件，开始读写
                 fopen_s(&(p_info->p_file), p_info->file_path, "wb");
                 p_info->pos = 0;
@@ -306,11 +307,12 @@ void Kernel::deal_file_rs(char *buff, int len)
     //同意
     if(file_info_rs->result == file_accept){
         std::string file_id(file_info_rs->file_id);
-        if(file_info_map.count(file_id)){
+        if(!file_info_map.count(file_id)){
             qDebug()<<"find map fail";
             return ;
         }
         S_FILE_INFO* p_info = file_info_map[file_info_rs->file_id];
+
         fopen_s(&(p_info->p_file), p_info->file_path, "rb");
         if(!(p_info->p_file)){
             qDebug()<<"find info fail";
@@ -321,27 +323,26 @@ void Kernel::deal_file_rs(char *buff, int len)
             block_rq.user_id = file_info_rs->user_id;
             block_rq.friend_id = file_info_rs->friend_id;
             int res = fread(block_rq.file_content, 1, _DEF_CONTENT, p_info->p_file);
+            block_rq.block_size = res;
+            p_info->pos += res;
             //发文件快
+            qDebug()<<"send file block";
             p_tcp_client_mediator->SendData(0, (char*)&block_rq, sizeof(block_rq));
 
 
-            block_rq.block_size = res;
-            p_info->pos += res;
             if(p_info->pos >= p_info->file_size){
                 fclose(p_info->p_file);
                 file_info_map.erase(file_id);
                 delete p_info;
                 break;
             }
-
         }
     }
-
-
 }
 
 void Kernel::deal_file_block_rq(char *buff, int len)
 {
+    qDebug()<<"deal file block rq";
     //拆包
     S_FILE_BLOCK_RQ* block_rq = (S_FILE_BLOCK_RQ*)buff;
     //根据id从map找到info
@@ -518,7 +519,8 @@ void Kernel::slot_send_file(int id, QString path)
     p_info->p_file = nullptr;
     p_info->pos = 0;
     p_info->user_id = file_send_rq.user_id;
-    strcpy(p_info->file_path, path.toStdString().c_str());
+    p_info->friend_id = file_send_rq.friend_id;
+    UTF8TOGB2312(p_info->file_path, sizeof(p_info->file_path), path);
     //存储map
     file_info_map[std::string(file_send_rq.file_id)] = p_info;
 

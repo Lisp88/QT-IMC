@@ -6,7 +6,7 @@
 #define _DEF_SIZE		(60)
 #define _DEF_CONTENT	(1024)
 #define _SERVER_IP        "192.168.52.129"
-#define _HOST_IP          "192.168.0.107"
+#define _HOST_IP          "127.0.0.1"
 //定义协议 : 上线请求 上线的回复  下线请求  聊天请求  聊天回复
 //文件信息请求 (文件名 大小 文件id) 文件信息回复 文件块的请求  文件块的回复 
 
@@ -58,8 +58,8 @@
 #define _DEF_TCP_FILE_RQ        _DEF_PROTOCOL_BASE+20
 #define _DEF_TCP_FILE_RS        _DEF_PROTOCOL_BASE+21
 //文件块
-#define _DEF_TCP_FILE_BLOCK_RQ  _DEF_PROTOCOL_BASE+22
-#define _DEF_TCP_FILE_BLOCK_RS  _DEF_PROTOCOL_BASE+23
+#define _DEF_TCP_FILE_BLOCK_RQ  _DEF_PROTOCOL_BASE+23
+#define _DEF_TCP_FILE_BLOCK_RS  _DEF_PROTOCOL_BASE+24
 
 //文件名长度
 #define _DEF_FILE_NAME_MAX       260
